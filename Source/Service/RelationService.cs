@@ -18,11 +18,33 @@ public static class RelationsService
         if (pawn?.relations == null) return "";
 
         StringBuilder relationsSb = new StringBuilder();
+        HashSet<Pawn> relatedPawns = new HashSet<Pawn>();
 
-        foreach (Pawn otherPawn in PawnSelector.GetAllNearByPawns(pawn).Take(Settings.Get().Context.MaxPawnContextCount - 1))
+        // 1. Get all pawns with explicit relations (global)
+        if (pawn.relations.RelatedPawns != null)
         {
-            if (otherPawn == pawn || (!otherPawn.RaceProps.Humanlike && !otherPawn.HasVocalLink()) || otherPawn.Dead ||
+            foreach (var p in pawn.relations.RelatedPawns)
+            {
+                if (p != null) relatedPawns.Add(p);
+            }
+        }
+
+        // 2. Add nearby pawns or pawns with non-zero opinion
+        var nearby = PawnSelector.GetAllNearByPawns(pawn);
+        if (nearby != null)
+        {
+            foreach (var p in nearby)
+            {
+                if (p != null) relatedPawns.Add(p);
+            }
+        }
+
+        foreach (Pawn otherPawn in relatedPawns.OrderByDescending(p => Math.Abs(pawn.relations.OpinionOf(p))))
+        {
+            if (otherPawn == pawn || otherPawn.Dead ||
                 otherPawn.relations is { hidePawnRelations: true }) continue;
+            
+            if (!otherPawn.RaceProps.Humanlike && !otherPawn.HasVocalLink()) continue;
 
             string label = null;
 
@@ -43,14 +65,14 @@ public static class RelationsService
                     label = GetStatusLabel(pawn, otherPawn);
                 }
 
-                // --- Step 3: If no other label found, fall back to opinion-based relationship ---
+                // --- Step 3: Fallback to opinion-based relationship ---
                 if (string.IsNullOrEmpty(label) && !pawn.IsVisitor() && !pawn.IsEnemy())
                 {
-                    if (opinionValue >= FriendOpinionThreshold)
+                    if (opinionValue > 0)
                     {
                         label = "Friend".Translate();
                     }
-                    else if (opinionValue <= RivalOpinionThreshold)
+                    else if (opinionValue < 0)
                     {
                         label = "Rival".Translate();
                     }
@@ -67,10 +89,13 @@ public static class RelationsService
                     string opinion = opinionValue.ToStringWithSign();
                     relationsSb.Append($"{pawnName}({label}) {opinion}, ");
                 }
+                
+                // Prevent prompt overflow
+                if (relationsSb.Length > 1000) break;
             }
             catch (Exception)
             {
-                // Skip this pawn if opinion calculation fails due to mod conflicts
+                // Skip this pawn if opinion calculation fails
             }
         }
 
