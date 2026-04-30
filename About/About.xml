@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-	<packageId>cj.rimtalk</packageId>
-	<name>RimTalk</name>
+	<packageId>hejile.rimagent</packageId>
+	<name>RimAgent</name>
 	<modVersion>1.0.9</modVersion>
-	<author>juicy</author>
-	<description>Bring your colonists to life with RimTalk! This revolutionary mod uses Google's AI to generate dynamic, context-aware dialogue for your pawns in real-time.
+	<author>hejile</author>
+	<description>Bring your colonists to life with RimAgent! This revolutionary mod uses Google's AI to generate dynamic, context-aware dialogue for your pawns in real-time.
 
 Key Features:
 • AI-powered conversations that reflect each pawn's current mood, thoughts, and situation
