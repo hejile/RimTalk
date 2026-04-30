@@ -134,7 +134,10 @@ public static class RelationsService
         else if (p.Faction != null && p.Faction.IsPlayer) status = "Member";
         else status = p.Faction?.Name ?? "Neutral";
 
-        return $"[{ageGender}, {job}, {status}]";
+        string activity = p.GetActivity();
+        string activityStr = string.IsNullOrEmpty(activity) ? "" : $", currently {activity}";
+
+        return $"[{ageGender}, {job}, {status}{activityStr}]";
     }
 
     public static string GetAllSocialString(Pawn pawn)
