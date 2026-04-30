@@ -86,8 +86,9 @@ public static class RelationsService
                 if (!string.IsNullOrEmpty(label))
                 {
                     string pawnName = otherPawn.LabelShort;
+                    string brief = GetPawnBrief(otherPawn);
                     string opinion = opinionValue.ToStringWithSign();
-                    relationsSb.Append($"{pawnName}({label}) {opinion}, ");
+                    relationsSb.Append($"{pawnName}({label}){brief} {opinion}, ");
                 }
                 
                 // Prevent prompt overflow
@@ -107,6 +108,33 @@ public static class RelationsService
         }
 
         return "";
+    }
+
+    private static string GetPawnBrief(Pawn p)
+    {
+        string ageStr;
+        if (p.ageTracker.AgeBiologicalYears > 0)
+        {
+            ageStr = $"{p.ageTracker.AgeBiologicalYears}-year-old";
+        }
+        else
+        {
+            // Handle babies under 1 year old
+            long babyDays = p.ageTracker.AgeBiologicalTicks / 60000;
+            ageStr = babyDays <= 0 ? "newborn" : $"{babyDays}-day-old";
+        }
+
+        string ageGender = $"{ageStr} {p.gender.ToString().ToLower()}";
+        string job = p.story?.Adulthood?.TitleCapFor(p.gender).ToString() ?? p.story?.Childhood?.TitleCapFor(p.gender).ToString() ?? "Unknown";
+
+        string status;
+        if (p.IsColonist) status = "Colonist";
+        else if (p.IsPrisoner) status = "Prisoner";
+        else if (p.IsSlave) status = "Slave";
+        else if (p.Faction != null && p.Faction.IsPlayer) status = "Member";
+        else status = p.Faction?.Name ?? "Neutral";
+
+        return $"[{ageGender}, {job}, {status}]";
     }
 
     public static string GetAllSocialString(Pawn pawn)
@@ -186,6 +214,7 @@ public static class RelationsService
     }
 
     private static string GetStatusLabel(Pawn pawn, Pawn otherPawn)
+
     {
         // Master relationship
         if ((pawn.IsPrisoner || pawn.IsSlave) && otherPawn.IsFreeNonSlaveColonist)
