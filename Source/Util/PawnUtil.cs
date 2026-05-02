@@ -485,6 +485,12 @@ public static class PawnUtil
                 : $"Traveling in caravan to {destName}";
         }
 
+        // Check if pawn is being carried (fix for babies being fed showing as Away)
+        if (pawn.ParentHolder is Pawn_CarryTracker carryTracker && carryTracker.pawn != null)
+        {
+            return $"being carried by {carryTracker.pawn.LabelShort}";
+        }
+
         // Check if pawn is away from map
         if (pawn.Map == null)
         {
