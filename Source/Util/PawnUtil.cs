@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using RimTalk.Data;
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
 using Verse.AI;
 using Verse.AI.Group;
@@ -458,6 +459,37 @@ public static class PawnUtil
     internal static string GetActivity(this Pawn pawn)
     {
         if (pawn == null) return null;
+
+        // Check for caravan (trading, traveling)
+        var caravan = pawn.GetCaravan();
+        if (caravan != null)
+        {
+            String destName = null;
+            if (caravan.pather?.ArrivalAction != null)
+            {
+                destName = caravan.pather.ArrivalAction.Label;
+            }
+            else if (caravan.pather?.Destination != null)
+            {
+                var destTile = caravan.pather.Destination;
+                var objectsAtDest = Find.WorldObjects.ObjectsAt(destTile);
+                var firstObjectAtDest = objectsAtDest.FirstOrDefault();
+                if (firstObjectAtDest != null)
+                {
+                    destName = firstObjectAtDest.Label;
+                }
+            }
+            
+            return string.IsNullOrEmpty(destName)
+                ? "Traveling in caravan"
+                : $"Traveling in caravan to {destName}";
+        }
+
+        // Check if pawn is away from map
+        if (pawn.Map == null)
+        {
+            return "Away from colony";
+        }
 
         if (pawn.InMentalState)
             return pawn.MentalState?.InspectLine;
