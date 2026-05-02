@@ -510,6 +510,26 @@ public static class PawnUtil
         var lord = pawn.GetLord()?.LordJob?.GetReport(pawn);
         var job = pawn.jobs?.curDriver?.GetReport();
 
+        // Enhanced Flee reporting: identify the threat from Job or MindState
+        if (pawn.CurJobDef == JobDefOf.Flee || pawn.CurJobDef == JobDefOf.FleeAndCower)
+        {
+            Thing threat = pawn.CurJob.targetA.Thing;
+
+            if (threat == null)
+            {
+                threat = pawn.Map.mapPawns.AllPawnsSpawned
+                    .FirstOrDefault(p => 
+                        p.CurJob?.targetA.Thing == pawn ||
+                        p.mindState?.enemyTarget == pawn
+                    );
+            }
+
+            if (threat != null)
+            {
+                job = $"{job} from {threat.LabelShort}";
+            }
+        }
+
         string activity = lord == null ? job :
             job == null ? lord :
             $"{lord} ({job})";
