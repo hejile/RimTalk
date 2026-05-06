@@ -15,6 +15,9 @@
         <ModFolderName>RimAgent</ModFolderName>
         <LangVersion>default</LangVersion>
         <EnableBubbles>true</EnableBubbles>
+        <RustProjectDir>$(ProjectDir)rust-agent</RustProjectDir>
+        <RustTarget>x86_64-pc-windows-gnu</RustTarget>
+        <RustOutputDir>$(RustProjectDir)/target/$(RustTarget)/$(Configuration.ToLower())</RustOutputDir>
     </PropertyGroup>
 
     <!-- Define version constants based on GameVersion -->
@@ -73,6 +76,15 @@
         </Reference>
     </ItemGroup>
 
+    <!-- Build Rust Agent -->
+    <Target Name="BuildRustAgent" BeforeTargets="BeforeBuild">
+        <PropertyGroup>
+            <CargoFlags Condition="'$(Configuration)' == 'Release'">--release</CargoFlags>
+        </PropertyGroup>
+        <Message Text="Building Rust agent ($(Configuration))..." Importance="high" />
+        <Exec Command="cargo build --target $(RustTarget) $(CargoFlags)" WorkingDirectory="$(RustProjectDir)" />
+    </Target>
+
     <!-- Deploy to RimWorld client -->
     <Target Name="DeployToModsFolder" AfterTargets="Build" Condition=" '$(BuildingWithScript)' != 'true' AND '$(RimWorldDir)' != '' ">
         <CallTarget Targets="WinDeploy" Condition=" '$(OS)' == 'Windows_NT' "/>
@@ -90,6 +102,11 @@
         <Exec Command='rsync -a --delete --checksum "$(ProjectDir)Defs/"      "$(DeployPath)Defs/"'/>
         <Exec Command='rsync -a --delete --checksum "$(ProjectDir)Languages/" "$(DeployPath)Languages/"'/>
         <Exec Command='rsync -a --delete --checksum "$(ProjectDir)Textures/"  "$(DeployPath)Textures/"'/>
+        
+        <!-- Copy Rust DLL directly to deployment path -->
+        <MakeDir Directories="$(DeployPath)Native/Windows/"/>
+        <Copy SourceFiles="$(RustOutputDir)/rust_agent.dll" DestinationFolder="$(DeployPath)Native/Windows/" SkipUnchangedFiles="true" />
+        
         <Exec Command='rsync -a --delete --checksum "$(ProjectDir)$(GameVersion)/"       "$(DeployPath)$(GameVersion)/"'/>
         <Copy SourceFiles="$(ProjectDir)Libs/Scriban.dll" DestinationFolder="$(DeployPath)$(GameVersion)/Assemblies/" />
         <Message Text="--- Linux deployment finished successfully ---" Importance="high"/>
@@ -124,6 +141,11 @@
         <Exec Command='robocopy "$(ProjectDir)Defs"      "$(WinModPath)Defs" /MIR' IgnoreExitCode="true"/>
         <Exec Command='robocopy "$(ProjectDir)Languages" "$(WinModPath)Languages" /MIR' IgnoreExitCode="true"/>
         <Exec Command='robocopy "$(ProjectDir)Textures"  "$(WinModPath)Textures" /MIR' IgnoreExitCode="true"/>
+        
+        <!-- Copy Rust DLL directly to deployment path -->
+        <MakeDir Directories="$(WinModPath)Native\Windows\"/>
+        <Copy SourceFiles="$(RustOutputDir)/rust_agent.dll" DestinationFolder="$(WinModPath)Native\Windows\" SkipUnchangedFiles="true" />
+        
         <Exec Command='robocopy "$(ProjectDir)$(GameVersion)"       "$(WinModPath)$(GameVersion)" /MIR' IgnoreExitCode="true"/>
         <Copy SourceFiles="$(ProjectDir)Libs/Scriban.dll" DestinationFolder="$(WinModPath)$(GameVersion)\Assemblies\" />
         <Message Text="--- Windows deployment finished successfully ---" Importance="high"/>

@@ -1,0 +1,6 @@
+[target.x86_64-pc-windows-gnu]
+rustflags = [
+    "-C", "link-args=-static",
+    "-C", "link-args=-Wl,--export-all-symbols", # 强制导出所有符号
+    "-C", "link-self-contained=yes"
+]
