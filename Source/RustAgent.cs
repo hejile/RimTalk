@@ -9,7 +9,11 @@ public static class RustAgent
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int GetMagicNumberDelegate();
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void UpdateGameInfoDelegate([MarshalAs(UnmanagedType.LPStr)] string jsonData);
+
     private static GetMagicNumberDelegate _getMagicNumber;
+    private static UpdateGameInfoDelegate _updateGameInfo;
 
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
     private static extern IntPtr LoadLibrary(string lpFileName);
@@ -39,9 +43,16 @@ public static class RustAgent
                             _getMagicNumber = (GetMagicNumberDelegate)Marshal.GetDelegateForFunctionPointer(pFunc, typeof(GetMagicNumberDelegate));
                             Log.Message($"[RimAgent] Successfully bound 'get_rust_magic_number' from {dllPath}");
                         }
+                        
+                        IntPtr pUpdateFunc = GetProcAddress(hModule, "update_game_info");
+                        if (pUpdateFunc != IntPtr.Zero)
+                        {
+                            _updateGameInfo = (UpdateGameInfoDelegate)Marshal.GetDelegateForFunctionPointer(pUpdateFunc, typeof(UpdateGameInfoDelegate));
+                            Log.Message($"[RimAgent] Successfully bound 'update_game_info' from {dllPath}");
+                        }
                         else
                         {
-                            Log.Error($"[RimAgent] Symbol 'get_rust_magic_number' not found in {dllPath}");
+                            Log.Error($"[RimAgent] Symbol 'update_game_info' not found in {dllPath}");
                         }
                     }
                     else
@@ -61,7 +72,7 @@ public static class RustAgent
         }
     }
 
-    public static int get_rust_magic_number()
+    public static int GetRustMagicNumber()
     {
         if (_getMagicNumber == null)
         {
@@ -69,5 +80,15 @@ public static class RustAgent
             return -1;
         }
         return _getMagicNumber();
+    }
+
+    public static void UpdateGameInfo(string jsonData)
+    {
+        if (_updateGameInfo == null)
+        {
+            // Only log error once to avoid spam
+            return;
+        }
+        _updateGameInfo(jsonData);
     }
 }
