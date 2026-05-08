@@ -1,6 +1,17 @@
 # RimAgent Development Guide
 
+## Project Overview
 This project is a fork of Rimworld mod RimTalk.
+
+Project targets:
+- add a rust project in rust-agent, move ai function to rust code
+- c# code provide data and ui
+- add agent ability powered by llm to pawn in rimworld game
+- focus on deepseek-v4-flash model, but open to other models
+
+Refactor:
+- RimAgent.cs: most of our new code should in here. we will gradully deperate many code of RimTalk.
+- RustAgent.cs: binding to rust code. We mannually bind rust function as c# delegate instead of using DllImport since it seems not work.
 
 ## Build & Environment
 - **Framework:** .NET Framework 4.8 (target RimWorld 1.5/1.6).
