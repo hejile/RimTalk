@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "dto": {
+      "mode": "subagent",
+      "description": "同步RimAgent.cs里的DTO数据结构到rust dto.rs",
+      "prompt": "同步RimAgent.cs里的DTO数据结构到rust dto.rs。命名要符合rust规范，比如c#里GameDTO在rust里应该叫Game，struct用serde rename_all = \"PascalCase\"保证两边命名一致。修改代码，但是不要git提交，我手动做。",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow"
+      }
+    }
+  }
+}
