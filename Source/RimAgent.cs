@@ -103,6 +103,17 @@ public class RustTickResponse
     public List<LogEntryDTO> Logs = new();
 }
 
+[DataContract]
+public class SettingsDTO
+{
+    [DataMember]
+    public string ApiKey;
+    [DataMember]
+    public string Provider;
+    [DataMember]
+    public string Model;
+}
+
 public class RimAgent : GameComponent
 {
     private Game _game;
@@ -114,6 +125,34 @@ public class RimAgent : GameComponent
         _game = game;
         int magicNumber = RustAgent.GetRustMagicNumber();
         Logger.Message("RimAgent initialized with magic number: " + magicNumber);
+        UpdateSettings();
+    }
+
+    public void UpdateSettings()
+    {
+        var settings = RimTalk.Settings.Get();
+        var activeConfig = settings.GetActiveConfig();
+        
+        SettingsDTO dto = new SettingsDTO 
+        { 
+            ApiKey = activeConfig?.ApiKey ?? "",
+            Provider = activeConfig?.Provider.ToString() ?? "None",
+            Model = settings.GetCurrentModel()
+        };
+
+        try
+        {
+            using var stream = new MemoryStream();
+            var serializer = new DataContractJsonSerializer(typeof(SettingsDTO));
+            serializer.WriteObject(stream, dto);
+            string json = Encoding.UTF8.GetString(stream.ToArray());
+            RustAgent.UpdateSettings(json);
+            Logger.Debug($"Settings updated and sent to Rust. Provider: {dto.Provider}, Model: {dto.Model}");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Failed to serialize SettingsDTO: " + ex.Message);
+        }
     }
 
     public override void GameComponentTick()

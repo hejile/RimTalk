@@ -11,6 +11,11 @@ mod rw_logger;
 
 static LOGGER: rw_logger::RwLogger = rw_logger::RwLogger;
 static FIRST_TICK: AtomicBool = AtomicBool::new(false);
+static SETTINGS: std::sync::RwLock<dto::Settings> = std::sync::RwLock::new(dto::Settings {
+    api_key: String::new(),
+    provider: String::new(),
+    model: String::new(),
+});
 
 #[unsafe(no_mangle)]
 pub extern "C" fn get_rust_magic_number() -> i32 {
@@ -33,6 +38,32 @@ pub extern "C" fn update_game_info(json_ptr: *const c_char) {
                 }
                 Err(e) => {
                     error!("[RimAgent Rust] Failed to parse game info: {}", e);
+                }
+            }
+        }
+    }).ok();
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn update_settings(json_ptr: *const c_char) {
+    catch_unwind(move || {
+        if json_ptr.is_null() {
+            return;
+        }
+        let c_str = unsafe { CStr::from_ptr(json_ptr) };
+        if let Ok(json_data) = c_str.to_str() {
+            match serde_json::from_str::<dto::Settings>(json_data) {
+                Ok(settings) => {
+                    info!("[RimAgent Rust] Received settings update: Provider={}, Model={}, API Key length={}", 
+                        settings.provider,
+                        settings.model,
+                        settings.api_key.len());
+                    if let Ok(mut global_settings) = SETTINGS.write() {
+                        *global_settings = settings;
+                    }
+                }
+                Err(e) => {
+                    error!("[RimAgent Rust] Failed to parse settings: {}", e);
                 }
             }
         }

@@ -13,10 +13,14 @@ public static class RustAgent
     public delegate void UpdateGameInfoDelegate([MarshalAs(UnmanagedType.LPStr)] string jsonData);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void UpdateSettingsDelegate([MarshalAs(UnmanagedType.LPStr)] string jsonData);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate IntPtr RustTickDelegate(IntPtr lastResponse);
 
     private static GetMagicNumberDelegate _getMagicNumber;
     private static UpdateGameInfoDelegate _updateGameInfo;
+    private static UpdateSettingsDelegate _updateSettings;
     private static RustTickDelegate _rustTick;
     private static IntPtr _lastRustResponsePtr = IntPtr.Zero;
 
@@ -58,6 +62,17 @@ public static class RustAgent
                         else
                         {
                             Log.Error($"[RimAgent] Symbol 'update_game_info' not found in {dllPath}");
+                        }
+
+                        IntPtr pSettingsFunc = GetProcAddress(hModule, "update_settings");
+                        if (pSettingsFunc != IntPtr.Zero)
+                        {
+                            _updateSettings = (UpdateSettingsDelegate)Marshal.GetDelegateForFunctionPointer(pSettingsFunc, typeof(UpdateSettingsDelegate));
+                            Log.Message($"[RimAgent] Successfully bound 'update_settings' from {dllPath}");
+                        }
+                        else
+                        {
+                            Log.Error($"[RimAgent] Symbol 'update_settings' not found in {dllPath}");
                         }
 
                         IntPtr pTickFunc = GetProcAddress(hModule, "rust_tick");
@@ -106,6 +121,15 @@ public static class RustAgent
             return;
         }
         _updateGameInfo(jsonData);
+    }
+
+    public static void UpdateSettings(string jsonData)
+    {
+        if (_updateSettings == null)
+        {
+            return;
+        }
+        _updateSettings(jsonData);
     }
 
     public static string RustTick()

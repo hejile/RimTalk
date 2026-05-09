@@ -74,6 +74,13 @@ public partial class Settings : Mod
             settings.CurrentCloudConfigIndex = 0;
             _apiSettingsHash = newHash;
             RimTalk.Reset(true);
+            
+            // Update settings to rust agent
+            if (Current.Game != null)
+            {
+                var rimAgent = Current.Game.GetComponent<RimAgent.RimAgent>();
+                rimAgent?.UpdateSettings();
+            }
         }
     }
 

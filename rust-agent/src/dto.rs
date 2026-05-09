@@ -49,3 +49,11 @@ pub struct Room {
     pub cleanliness: f32,
     pub beauty: f32,
 }
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "PascalCase")]
+pub struct Settings {
+    pub api_key: String,
+    pub provider: String,
+    pub model: String,
+}
