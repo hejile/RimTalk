@@ -6,7 +6,11 @@ use std::panic::catch_unwind;
 
 use log::{info, error};
 
+mod agent;
 mod dto;
+mod openai;
+mod prompt;
+mod request;
 mod rw_logger;
 
 static LOGGER: rw_logger::RwLogger = rw_logger::RwLogger;
