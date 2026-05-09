@@ -226,6 +226,8 @@ Scriban 魔法 (动态内容)
     <RimTalk.Settings.RateLimitWarning>警告：较长的提示将消耗更多令牌并更快达到速率限制。</RimTalk.Settings.RateLimitWarning>
     <RimTalk.Settings.TokenInfo>目前：约 {0} 令牌 | 建议限制：{1} 令牌</RimTalk.Settings.TokenInfo>
     <RimTalk.Settings.ResetToDefault>重设为默认</RimTalk.Settings.ResetToDefault>
+    <RimTalk.Settings.ReloadRust>重新加载 Rust DLL</RimTalk.Settings.ReloadRust>
+    <RimTalk.Settings.ReloadRustTooltip>卸载并重新加载 Rust 动态链接库。适用于在不重启游戏的情况下更新 Rust 逻辑。</RimTalk.Settings.ReloadRustTooltip>
     <RimTalk.Settings.EventFilterTip>提示：只有勾选的事件类型才会由 AI 处理。取消勾选您不希望 AI 回应的类型。</RimTalk.Settings.EventFilterTip>
     <RimTalk.Settings.NoArchivableTypes>未找到可存档类型。请尝试开始一个游戏然后重新扫描。</RimTalk.Settings.NoArchivableTypes>
 

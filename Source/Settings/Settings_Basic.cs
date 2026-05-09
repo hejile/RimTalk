@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -247,6 +248,14 @@ public partial class Settings
             settings.UseSimpleConfig = true;
             settings.DisableAiAtSpeed = 0;
             settings.ButtonDisplay = ButtonDisplayMode.Toggle;
+        }
+
+        listingStandard.Gap(12f);
+        if (listingStandard.ButtonText("RimTalk.Settings.ReloadRust".Translate().ToString()))
+        {
+            RustAgent.StopRust();
+            RustAgent.Initialize();
+            Messages.Message("[RimAgent] Rust DLL reloaded successfully.", MessageTypeDefOf.PositiveEvent, false);
         }
     }
     

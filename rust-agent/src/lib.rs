@@ -1,3 +1,4 @@
+use std::fs::File;
 use std::sync::atomic::Ordering;
 use std::thread;
 use std::{ffi::CStr, sync::atomic::AtomicBool};
@@ -20,6 +21,7 @@ static SETTINGS: std::sync::RwLock<dto::Settings> = std::sync::RwLock::new(dto::
     provider: String::new(),
     model: String::new(),
 });
+static RUST_THREAD_HANDLE: std::sync::Mutex<Option<std::thread::JoinHandle<()>>> = std::sync::Mutex::new(None);
 
 #[unsafe(no_mangle)]
 pub extern "C" fn get_rust_magic_number() -> i32 {
@@ -99,11 +101,39 @@ pub extern "C" fn rust_tick(last_response: *const c_char) -> *const c_char {
     }).unwrap_or_else(|_| std::ptr::null_mut())
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn rust_exit() {
+    info!("[RimAgent Rust] rust_exit called.");
+    if let Ok(mut thread_handle) = RUST_THREAD_HANDLE.lock() {
+        if let Some(handle) = thread_handle.take() {
+            handle.join().unwrap_or_else(|_| {
+                error!("[RimAgent Rust] Failed to join Rust thread.");
+            });
+        }
+    }
+}
+
 fn start() {
     log::set_logger(&LOGGER).unwrap();
     log::set_max_level(log::LevelFilter::Info);
     info!("[RimAgent Rust] Logger initialized.");
-    thread::spawn(|| {
-        info!("[RimAgent Rust] thread started.");
+    let handle = thread::spawn(|| {
+        rust_thread();
     });
+    if let Ok(mut thread_handle) = RUST_THREAD_HANDLE.lock() {
+        *thread_handle = Some(handle);
+    }
+}
+
+fn rust_thread() {
+    let cwd = std::env::current_dir();
+    info!("[RimAgent Rust] thread started. Current working directory: {:?}", cwd);
+    let mut f = match File::create("rust_agent_log.txt") {
+        Ok(file) => file,
+        Err(e) => {
+            error!("[RimAgent Rust] Failed to create log file: {}", e);
+            return;
+        }
+    };
+    let _ = std::io::Write::write_all(&mut f, b"RimAgent Rust thread started.\n");
 }
