@@ -9,6 +9,15 @@
         "edit": "allow",
         "bash": "allow"
       }
+    },
+    "rust_tick": {
+      "mode": "subagent",
+      "description": "同步lib.rs里的RustTickResponse到c#",
+      "prompt": "同步lib.rs里的RustTickResponse数据结构到RimAgent.cs。不要git提交，我手动做。",
+      "permission": {
+        "edit": "allow",
+        "bash": "allow"
+      }
     }
   }
 }

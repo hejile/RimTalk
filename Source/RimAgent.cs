@@ -7,6 +7,7 @@ using System.Runtime.Serialization.Json;
 using System.Text;
 using RimTalk.Util;
 using RimWorld;
+using Unity.Burst.Intrinsics;
 using Verse;
 
 namespace RimAgent;
@@ -86,13 +87,31 @@ public class RoomDTO
     public float Beauty;
 }
 
+[DataContract]
+public class LogEntryDTO
+{
+    [DataMember]
+    public string Level;
+    [DataMember]
+    public string Message;
+}
+
+[DataContract]
+public class RustTickResponse
+{
+    [DataMember]
+    public List<LogEntryDTO> Logs = new();
+}
+
 public class RimAgent : GameComponent
 {
+    private Game _game;
     private int _tickCounter = 0;
-    private const int UpdateInterval = 1000;
+    private const int UpdateDataSeconds = 5;
 
     public RimAgent(Game game)
     {
+        _game = game;
         int magicNumber = RustAgent.GetRustMagicNumber();
         Logger.Message("RimAgent initialized with magic number: " + magicNumber);
     }
@@ -100,12 +119,63 @@ public class RimAgent : GameComponent
     public override void GameComponentTick()
     {
         base.GameComponentTick();
+        int ticksPerSecond = CommonUtil.GetTicksForDuration(1);
+        if (ticksPerSecond == 0)
+            return; // This can happen when gravship flying.
         _tickCounter++;
-        if (_tickCounter >= UpdateInterval)
+        if (_tickCounter >= UpdateDataSeconds * ticksPerSecond)
         {
             _tickCounter = 0;
             UpdateGameInfo();
+            Logger.Debug("Game info updated and sent to Rust.");
         }
+        if (_tickCounter % ticksPerSecond == 0)
+        {
+            TickRust();
+        }
+    }
+
+    private void TickRust()
+    {
+        try
+        {
+            string jsonResponse = RustAgent.RustTick();
+            if (string.IsNullOrEmpty(jsonResponse)) return;
+
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(jsonResponse));
+            var serializer = new DataContractJsonSerializer(typeof(RustTickResponse));
+            var response = (RustTickResponse)serializer.ReadObject(stream);
+
+            if (response?.Logs != null)
+            {
+                foreach (var log in response.Logs)
+                {
+                    switch (log.Level) {
+                        case "ERROR":
+                            Logger.Error("[RimAgent Rust] " + log.Message);
+                            break;
+                        case "WARN":
+                            Logger.Warning("[RimAgent Rust] " + log.Message);
+                            break;
+                        case "DEBUG":
+                            Logger.Debug("[RimAgent Rust] " + log.Message);
+                            break;
+                        default:
+                            Logger.Message("[RimAgent Rust] " + log.Message);
+                            break;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("Error in TickRust: " + ex.Message);
+        }
+    }
+
+    public override void GameComponentUpdate()
+    {
+        base.GameComponentUpdate();
     }
 
     private PawnDTO CreatePawnInfo(Pawn pawn)
@@ -246,3 +316,4 @@ public class RimAgent : GameComponent
         }
     }
 }
+

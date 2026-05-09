@@ -12,8 +12,13 @@ public static class RustAgent
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void UpdateGameInfoDelegate([MarshalAs(UnmanagedType.LPStr)] string jsonData);
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate IntPtr RustTickDelegate(IntPtr lastResponse);
+
     private static GetMagicNumberDelegate _getMagicNumber;
     private static UpdateGameInfoDelegate _updateGameInfo;
+    private static RustTickDelegate _rustTick;
+    private static IntPtr _lastRustResponsePtr = IntPtr.Zero;
 
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
     private static extern IntPtr LoadLibrary(string lpFileName);
@@ -54,6 +59,17 @@ public static class RustAgent
                         {
                             Log.Error($"[RimAgent] Symbol 'update_game_info' not found in {dllPath}");
                         }
+
+                        IntPtr pTickFunc = GetProcAddress(hModule, "rust_tick");
+                        if (pTickFunc != IntPtr.Zero)
+                        {
+                            _rustTick = (RustTickDelegate)Marshal.GetDelegateForFunctionPointer(pTickFunc, typeof(RustTickDelegate));
+                            Log.Message($"[RimAgent] Successfully bound 'rust_tick' from {dllPath}");
+                        }
+                        else
+                        {
+                            Log.Error($"[RimAgent] Symbol 'rust_tick' not found in {dllPath}");
+                        }
                     }
                     else
                     {
@@ -90,5 +106,15 @@ public static class RustAgent
             return;
         }
         _updateGameInfo(jsonData);
+    }
+
+    public static string RustTick()
+    {
+        if (_rustTick == null) return null;
+
+        _lastRustResponsePtr = _rustTick(_lastRustResponsePtr);
+        if (_lastRustResponsePtr == IntPtr.Zero) return null;
+
+        return Marshal.PtrToStringAnsi(_lastRustResponsePtr);
     }
 }
