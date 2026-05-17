@@ -22,6 +22,11 @@ internal static class TickManagerPatch
 
     public static void Postfix()
     {
+        if (Settings.Get().UseRimAgent)
+        {
+            return;
+        }
+
         Counter.Tick++;
 
         if (IsNow(DebugStatUpdateInterval))

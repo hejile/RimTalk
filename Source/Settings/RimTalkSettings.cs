@@ -45,6 +45,8 @@ public class RimTalkSettings : ModSettings
     public int DisableAiAtSpeed = 0;
     public Settings.ButtonDisplayMode ButtonDisplay = Settings.ButtonDisplayMode.Toggle;
 
+    public bool UseRimAgent = false;
+
     public ContextSettings Context = new();
 
     // Debug mode settings
@@ -192,6 +194,7 @@ public class RimTalkSettings : ModSettings
         Scribe_Values.Look(ref UseAdvancedPromptMode, "useAdvancedPromptMode", false);
 
         // Debug window settings
+        Scribe_Values.Look(ref UseRimAgent, "useRimAgent", false);
         Scribe_Values.Look(ref ButtonDisplay, "buttonDisplay", Settings.ButtonDisplayMode.Toggle, true);
         Scribe_Values.Look(ref DebugModeEnabled, "debugModeEnabled", false);
         Scribe_Values.Look(ref DebugSortColumn, "debugSortColumn", null);

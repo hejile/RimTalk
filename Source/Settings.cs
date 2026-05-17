@@ -117,6 +117,7 @@ public partial class Settings : Mod
         sb.AppendLine(settings.ApplyMoodAndSocialEffects.ToString());
         sb.AppendLine(settings.PlayerDialogueMode.ToString());
         sb.AppendLine(settings.PlayerName);
+        sb.AppendLine(settings.UseRimAgent.ToString());
         
         return sb.ToString().GetHashCode();
     }

@@ -47,6 +47,11 @@ public partial class Settings
     {
         RimTalkSettings settings = Get();
 
+        // RimAgent mode toggle
+        listingStandard.CheckboxLabeled("启用 RimAgent（实验性）", ref settings.UseRimAgent,
+            "启用后将 RimTalk 对话生成逻辑交给 RimAgent 处理");
+        listingStandard.Gap(12f);
+
         // API Configuration section
         if (!settings.UseSimpleConfig)
         {
