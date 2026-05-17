@@ -1,9 +1,7 @@
-use std::fs::File;
-use std::sync::atomic::Ordering;
-use std::thread;
-use std::{ffi::CStr, sync::atomic::AtomicBool};
+use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::panic::catch_unwind;
+use std::sync::OnceLock;
 
 use log::{info, error};
 
@@ -14,7 +12,8 @@ mod request;
 mod runtime;
 mod rw_logger;
 
-static FIRST_TICK: AtomicBool = AtomicBool::new(false);
+static STARTED: OnceLock<()> = OnceLock::new();
+
 static SETTINGS: std::sync::RwLock<dto::Settings> = std::sync::RwLock::new(dto::Settings {
     api_key: String::new(),
     provider: String::new(),
@@ -81,13 +80,17 @@ struct RustTickResponse {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn rust_start() {
+    STARTED.get_or_init(|| {
+        runtime::start()
+    });
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn rust_tick(last_response: *const c_char) -> *const c_char {
     catch_unwind(move || {
         if !last_response.is_null() {
             drop(unsafe { std::ffi::CString::from_raw(last_response as *mut c_char) });
-        }
-        if !FIRST_TICK.swap(true, Ordering::AcqRel) {
-            runtime::start();
         }
         let logs = rw_logger::drain_logs();
         let response = RustTickResponse {

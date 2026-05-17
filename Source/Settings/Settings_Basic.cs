@@ -259,7 +259,7 @@ public partial class Settings
         if (listingStandard.ButtonText("RimTalk.Settings.ReloadRust".Translate().ToString()))
         {
             RustAgent.StopRust();
-            RustAgent.Initialize();
+            RustAgent.StartRust();
             Messages.Message("[RimAgent] Rust DLL reloaded successfully.", MessageTypeDefOf.PositiveEvent, false);
         }
     }

@@ -123,6 +123,7 @@ public class RimAgent : GameComponent
     public RimAgent(Game game)
     {
         _game = game;
+        RustAgent.StartRust();
         int magicNumber = RustAgent.GetRustMagicNumber();
         Logger.Message("RimAgent initialized with magic number: " + magicNumber);
         UpdateSettings();

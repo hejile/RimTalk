@@ -19,12 +19,16 @@ public static class RustAgent
     public delegate IntPtr RustTickDelegate(IntPtr lastResponse);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void RustStartDelegate();
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate void RustExitDelegate();
 
     private static GetMagicNumberDelegate _getMagicNumber;
     private static UpdateGameInfoDelegate _updateGameInfo;
     private static UpdateSettingsDelegate _updateSettings;
     private static RustTickDelegate _rustTick;
+    private static RustStartDelegate _rustStart;
     private static RustExitDelegate _rustExit;
     private static IntPtr _lastRustResponsePtr = IntPtr.Zero;
     private static IntPtr _hModule = IntPtr.Zero;
@@ -38,11 +42,6 @@ public static class RustAgent
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool FreeLibrary(IntPtr hModule);
-
-    static RustAgent()
-    {
-        Initialize();
-    }
 
     public static void Initialize()
     {
@@ -102,6 +101,17 @@ public static class RustAgent
                             Log.Error($"[RimAgent] Symbol 'rust_tick' not found in {dllPath}");
                         }
 
+                        IntPtr pStartFunc = GetProcAddress(_hModule, "rust_start");
+                        if (pStartFunc != IntPtr.Zero)
+                        {
+                            _rustStart = (RustStartDelegate)Marshal.GetDelegateForFunctionPointer(pStartFunc, typeof(RustStartDelegate));
+                            Log.Message($"[RimAgent] Successfully bound 'rust_start' from {dllPath}");
+                        }
+                        else
+                        {
+                            Log.Error($"[RimAgent] Symbol 'rust_start' not found in {dllPath}");
+                        }
+
                         IntPtr pExitFunc = GetProcAddress(_hModule, "rust_exit");
                         if (pExitFunc != IntPtr.Zero)
                         {
@@ -148,6 +158,7 @@ public static class RustAgent
         _updateGameInfo = null;
         _updateSettings = null;
         _rustTick = null;
+        _rustStart = null;
         _rustExit = null;
         _lastRustResponsePtr = IntPtr.Zero;
 
@@ -163,6 +174,12 @@ public static class RustAgent
                 Log.Error($"[RimAgent] Failed to unload rust_agent.dll. Error: {Marshal.GetLastWin32Error()}");
             }
         }
+    }
+
+    public static void StartRust()
+    {
+        Initialize();
+        _rustStart?.Invoke();
     }
 
     public static int GetRustMagicNumber()
