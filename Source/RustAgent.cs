@@ -43,6 +43,22 @@ public static class RustAgent
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool FreeLibrary(IntPtr hModule);
 
+    private static T BindFunction<T>(string name, string dllPath) where T : class
+    {
+        IntPtr p = GetProcAddress(_hModule, name);
+        if (p != IntPtr.Zero)
+        {
+            var del = Marshal.GetDelegateForFunctionPointer(p, typeof(T));
+            Log.Message($"[RimAgent] Successfully bound '{name}' from {dllPath}");
+            return del as T;
+        }
+        else
+        {
+            Log.Error($"[RimAgent] Symbol '{name}' not found in {dllPath}");
+            return null;
+        }
+    }
+
     public static void Initialize()
     {
         if (_hModule != IntPtr.Zero) return;
@@ -61,67 +77,12 @@ public static class RustAgent
                     _hModule = LoadLibrary(dllPath);
                     if (_hModule != IntPtr.Zero)
                     {
-                        IntPtr pFunc = GetProcAddress(_hModule, "get_rust_magic_number");
-                        if (pFunc != IntPtr.Zero)
-                        {
-                            _getMagicNumber = (GetMagicNumberDelegate)Marshal.GetDelegateForFunctionPointer(pFunc, typeof(GetMagicNumberDelegate));
-                            Log.Message($"[RimAgent] Successfully bound 'get_rust_magic_number' from {dllPath}");
-                        }
-                        
-                        IntPtr pUpdateFunc = GetProcAddress(_hModule, "update_game_info");
-                        if (pUpdateFunc != IntPtr.Zero)
-                        {
-                            _updateGameInfo = (UpdateGameInfoDelegate)Marshal.GetDelegateForFunctionPointer(pUpdateFunc, typeof(UpdateGameInfoDelegate));
-                            Log.Message($"[RimAgent] Successfully bound 'update_game_info' from {dllPath}");
-                        }
-                        else
-                        {
-                            Log.Error($"[RimAgent] Symbol 'update_game_info' not found in {dllPath}");
-                        }
-
-                        IntPtr pSettingsFunc = GetProcAddress(_hModule, "update_settings");
-                        if (pSettingsFunc != IntPtr.Zero)
-                        {
-                            _updateSettings = (UpdateSettingsDelegate)Marshal.GetDelegateForFunctionPointer(pSettingsFunc, typeof(UpdateSettingsDelegate));
-                            Log.Message($"[RimAgent] Successfully bound 'update_settings' from {dllPath}");
-                        }
-                        else
-                        {
-                            Log.Error($"[RimAgent] Symbol 'update_settings' not found in {dllPath}");
-                        }
-
-                        IntPtr pTickFunc = GetProcAddress(_hModule, "rust_tick");
-                        if (pTickFunc != IntPtr.Zero)
-                        {
-                            _rustTick = (RustTickDelegate)Marshal.GetDelegateForFunctionPointer(pTickFunc, typeof(RustTickDelegate));
-                            Log.Message($"[RimAgent] Successfully bound 'rust_tick' from {dllPath}");
-                        }
-                        else
-                        {
-                            Log.Error($"[RimAgent] Symbol 'rust_tick' not found in {dllPath}");
-                        }
-
-                        IntPtr pStartFunc = GetProcAddress(_hModule, "rust_start");
-                        if (pStartFunc != IntPtr.Zero)
-                        {
-                            _rustStart = (RustStartDelegate)Marshal.GetDelegateForFunctionPointer(pStartFunc, typeof(RustStartDelegate));
-                            Log.Message($"[RimAgent] Successfully bound 'rust_start' from {dllPath}");
-                        }
-                        else
-                        {
-                            Log.Error($"[RimAgent] Symbol 'rust_start' not found in {dllPath}");
-                        }
-
-                        IntPtr pExitFunc = GetProcAddress(_hModule, "rust_exit");
-                        if (pExitFunc != IntPtr.Zero)
-                        {
-                            _rustExit = (RustExitDelegate)Marshal.GetDelegateForFunctionPointer(pExitFunc, typeof(RustExitDelegate));
-                            Log.Message($"[RimAgent] Successfully bound 'rust_exit' from {dllPath}");
-                        }
-                        else
-                        {
-                            Log.Error($"[RimAgent] Symbol 'rust_exit' not found in {dllPath}");
-                        }
+                        _getMagicNumber = BindFunction<GetMagicNumberDelegate>("get_rust_magic_number", dllPath);
+                        _updateGameInfo = BindFunction<UpdateGameInfoDelegate>("update_game_info", dllPath);
+                        _updateSettings = BindFunction<UpdateSettingsDelegate>("update_settings", dllPath);
+                        _rustTick = BindFunction<RustTickDelegate>("rust_tick", dllPath);
+                        _rustStart = BindFunction<RustStartDelegate>("rust_start", dllPath);
+                        _rustExit = BindFunction<RustExitDelegate>("rust_exit", dllPath);
                     }
                     else
                     {
