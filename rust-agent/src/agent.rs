@@ -7,4 +7,5 @@ struct Environment {
 
 struct Agent {
     pawn_id: String,
+    memory: Vec<String>,
 }
